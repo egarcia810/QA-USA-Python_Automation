@@ -41,6 +41,12 @@ class UrbanRoutesPage:
         '//div[@class="pp-text" and text()="Payment method"]/parent::div'
     )
 
+    PAYMENT_METHOD_VALUE_LOCATOR = (
+        By.XPATH,
+        '//div[@class="pp-text" and text()="Payment method"]'
+        '/following-sibling::div'
+    )
+
     ADD_CARD_LOCATOR = (
         By.CLASS_NAME,
         'pp-plus-container'
@@ -58,11 +64,26 @@ class UrbanRoutesPage:
         '//button[text()="Link"]'
     )
 
-    MESSAGE_TO_DRIVER_LOCATOR = (By.ID, 'comment')
+    PAYMENT_METHOD_CLOSE_LOCATOR = (
+        By.CSS_SELECTOR,
+        'div.section.active > button.close-button.section-close'
+    )
+
+    MESSAGE_TO_DRIVER_LOCATOR = (
+        By.ID,
+        'comment'
+    )
 
     BLANKET_AND_HANDKERCHIEFS_LOCATOR = (
         By.XPATH,
-        '//div[text()="Blanket and handkerchiefs"]/following::span[@class="slider round"][1]'
+        '//div[text()="Blanket and handkerchiefs"]'
+        '/following::span[@class="slider round"][1]'
+    )
+
+    BLANKET_AND_HANDKERCHIEFS_CHECKBOX_LOCATOR = (
+        By.XPATH,
+        '//div[text()="Blanket and handkerchiefs"]'
+        '/following::input[@type="checkbox"][1]'
     )
 
     ICE_CREAM_PLUS_LOCATOR = (
@@ -102,6 +123,16 @@ class UrbanRoutesPage:
             *self.TO_LOCATOR
         ).send_keys(to_address)
 
+    def get_from(self):
+        return self.driver.find_element(
+            *self.FROM_LOCATOR
+        ).get_attribute('value')
+
+    def get_to(self):
+        return self.driver.find_element(
+            *self.TO_LOCATOR
+        ).get_attribute('value')
+
     def click_call_taxi(self):
         WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(
@@ -114,6 +145,11 @@ class UrbanRoutesPage:
             *self.SUPPORTIVE_PLAN_LOCATOR
         ).click()
 
+    def get_selected_plan(self):
+        return self.driver.find_element(
+            *self.SUPPORTIVE_PLAN_LOCATOR
+        ).text
+
     def click_phone_button(self):
         self.driver.find_element(
             *self.PHONE_BUTTON_LOCATOR
@@ -123,6 +159,11 @@ class UrbanRoutesPage:
         self.driver.find_element(
             *self.PHONE_NUMBER_LOCATOR
         ).send_keys(phone_number)
+
+    def get_phone_number(self):
+        return self.driver.find_element(
+            *self.PHONE_NUMBER_LOCATOR
+        ).get_attribute('value')
 
     def click_next(self):
         self.driver.find_element(
@@ -159,42 +200,102 @@ class UrbanRoutesPage:
         ).send_keys(card_number)
 
     def set_card_code(self, card_code):
-        self.driver.find_element(
+        code_field = self.driver.find_element(
             *self.CARD_CODE_LOCATOR
-        ).send_keys(card_code)
+        )
+        code_field.send_keys(card_code)
+
+        self.driver.execute_script(
+            "arguments[0].blur();",
+            code_field
+        )
 
     def click_link(self):
-        self.driver.find_element(
-            *self.LINK_BUTTON_LOCATOR
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(
+                self.LINK_BUTTON_LOCATOR
+            )
         ).click()
+
+    def close_payment_method(self):
+        element = self.driver.find_element(
+            *self.PAYMENT_METHOD_CLOSE_LOCATOR
+        )
+        self.driver.execute_script(
+            "arguments[0].click();",
+            element
+        )
+
+    def get_payment_method(self):
+        return WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(
+                self.PAYMENT_METHOD_VALUE_LOCATOR
+            )
+        ).text
 
     def set_message_to_driver(self, message):
         self.driver.find_element(
             *self.MESSAGE_TO_DRIVER_LOCATOR
         ).send_keys(message)
 
+    def get_message_to_driver(self):
+        return self.driver.find_element(
+            *self.MESSAGE_TO_DRIVER_LOCATOR
+        ).get_attribute('value')
+
     def select_blanket_and_handkerchiefs(self):
-        element = self.driver.find_element(
-            *self.BLANKET_AND_HANDKERCHIEFS_LOCATOR
+        element = WebDriverWait(
+            self.driver,
+            10
+        ).until(
+            EC.presence_of_element_located(
+                self.BLANKET_AND_HANDKERCHIEFS_LOCATOR
+            )
         )
+
         self.driver.execute_script(
             "arguments[0].click();",
             element
         )
 
-    def add_ice_cream(self):
-        element = self.driver.find_element(
-            *self.ICE_CREAM_PLUS_LOCATOR
+    def is_blanket_and_handkerchiefs_selected(self):
+        checkbox = WebDriverWait(
+            self.driver,
+            10
+        ).until(
+            EC.presence_of_element_located(
+                self.BLANKET_AND_HANDKERCHIEFS_CHECKBOX_LOCATOR
+            )
         )
+
+        return checkbox.is_selected()
+
+    def add_ice_cream(self):
+        element = WebDriverWait(
+            self.driver,
+            10
+        ).until(
+            EC.presence_of_element_located(
+                self.ICE_CREAM_PLUS_LOCATOR
+            )
+        )
+
         self.driver.execute_script(
             "arguments[0].click();",
             element
         )
 
     def get_ice_cream_count(self):
-        return self.driver.find_element(
-            *self.ICE_CREAM_COUNT_LOCATOR
-        ).text
+        element = WebDriverWait(
+            self.driver,
+            10
+        ).until(
+            EC.presence_of_element_located(
+                self.ICE_CREAM_COUNT_LOCATOR
+            )
+        )
+
+        return element.text
 
     def click_order(self):
         element = self.driver.find_element(
@@ -214,3 +315,6 @@ class UrbanRoutesPage:
                 self.CAR_SEARCH_LOCATOR
             )
         )
+
+    def is_car_search_displayed(self):
+        return self.wait_for_car_search().is_displayed()
